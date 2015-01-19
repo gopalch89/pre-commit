@@ -1,10 +1,12 @@
 from __future__ import unicode_literals
 
 import contextlib
+import errno
 import functools
 import os
 import os.path
 import shutil
+import stat
 import subprocess
 import tarfile
 import tempfile
@@ -46,7 +48,7 @@ def clean_path_on_failure(path):
         yield
     except BaseException:
         if os.path.exists(path):
-            shutil.rmtree(path)
+            rmtree(path)
         raise
 
 
@@ -78,7 +80,7 @@ def tmpdir():
     try:
         yield tempdir
     finally:
-        shutil.rmtree(tempdir)
+        rmtree(tempdir)
 
 
 def resource_filename(filename):
@@ -150,3 +152,15 @@ def cmd_output(*cmd, **kwargs):
         )
 
     return proc.returncode, stdout, stderr
+
+
+def rmtree(path):
+    """On windows, rmtree fails for readonly dirs."""
+    def handle_remove_readonly(func, path, exc):
+        excvalue = exc[1]
+        if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
+            os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            func(path)
+        else:
+            raise
+    shutil.rmtree(path, ignore_errors=False, onerror=handle_remove_readonly)
