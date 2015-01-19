@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import contextlib
+import os
 
 import virtualenv
 
@@ -15,7 +16,9 @@ class PythonEnv(helpers.Environment):
     @property
     def env_prefix(self):
         return '. {{prefix}}{0}activate &&'.format(
-            virtualenv.path_locations(ENVIRONMENT_DIR)[-1],
+            virtualenv.path_locations(
+                ENVIRONMENT_DIR,
+            )[-1].rstrip(os.sep) + os.sep,
         )
 
 
