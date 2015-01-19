@@ -5,7 +5,6 @@ import io
 import os
 import os.path
 import re
-import stat
 import subprocess
 import sys
 
@@ -63,8 +62,7 @@ def test_install_pre_commit(tmpdir_factory):
         pre_push=''
     )
     assert pre_commit_contents == expected_contents
-    stat_result = os.stat(runner.pre_commit_path)
-    assert stat_result.st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    assert os.access(runner.pre_commit_path, os.X_OK)
 
     ret = install(runner, hook_type='pre-push')
     assert ret == 0
@@ -107,7 +105,7 @@ def _get_commit_output(
     cmd_output('git', 'add', touch_file)
     # Don't want to write to home directory
     home = home or tmpdir_factory.get()
-    env = dict(env_base, **{'PRE_COMMIT_HOME': home})
+    env = dict(env_base, **{b'PRE_COMMIT_HOME': home})
     return cmd_output(
         'git', 'commit', '-m', 'Commit!', '--allow-empty',
         # git commit puts pre-commit to stderr
@@ -120,21 +118,21 @@ def _get_commit_output(
 # osx does this different :(
 FILES_CHANGED = (
     r'('
-    r' 1 file changed, 0 insertions\(\+\), 0 deletions\(-\)\n'
+    r' 1 file changed, 0 insertions\(\+\), 0 deletions\(-\)\r?\n'
     r'|'
-    r' 0 files changed\n'
+    r' 0 files changed\r?\n'
     r')'
 )
 
 
 NORMAL_PRE_COMMIT_RUN = re.compile(
-    r'^\[INFO\] Installing environment for .+\.\n'
-    r'\[INFO\] Once installed this environment will be reused\.\n'
-    r'\[INFO\] This may take a few minutes\.\.\.\n'
-    r'Bash hook\.+Passed\n'
-    r'\[master [a-f0-9]{7}\] Commit!\n' +
+    r'^\[INFO\] Installing environment for .+\.\r?\n'
+    r'\[INFO\] Once installed this environment will be reused\.\r?\n'
+    r'\[INFO\] This may take a few minutes\.\.\.\r?\n'
+    r'Bash hook\.+Passed\r?\n'
+    r'\[master [a-f0-9]{7}\] Commit!\r?\n' +
     FILES_CHANGED +
-    r' create mode 100644 foo\n$'
+    r' create mode 100644 foo\r?\n$'
 )
 
 
@@ -168,7 +166,7 @@ def test_environment_not_sourced(tmpdir_factory):
 
         ret, stdout, stderr = cmd_output(
             'git', 'commit', '--allow-empty', '-m', 'foo',
-            env={'HOME': os.environ['HOME']},
+            env={b'HOME': os.environ['HOME']},
             retcode=None,
         )
         assert ret == 1
@@ -180,15 +178,15 @@ def test_environment_not_sourced(tmpdir_factory):
 
 
 FAILING_PRE_COMMIT_RUN = re.compile(
-    r'^\[INFO\] Installing environment for .+\.\n'
-    r'\[INFO\] Once installed this environment will be reused\.\n'
-    r'\[INFO\] This may take a few minutes\.\.\.\n'
-    r'Failing hook\.+Failed\n'
-    r'hookid: failing_hook\n'
-    r'\n'
-    r'Fail\n'
-    r'foo\n'
-    r'\n$'
+    r'^\[INFO\] Installing environment for .+\.\r?\n'
+    r'\[INFO\] Once installed this environment will be reused\.\r?\n'
+    r'\[INFO\] This may take a few minutes\.\.\.\r?\n'
+    r'Failing hook\.+Failed\r?\n'
+    r'hookid: failing_hook\r?\n'
+    r'\r?\n'
+    r'Fail\r?\n'
+    r'foo\r?\n'
+    r'\r?\n$'
 )
 
 
@@ -203,10 +201,10 @@ def test_failing_hooks_returns_nonzero(tmpdir_factory):
 
 
 EXISTING_COMMIT_RUN = re.compile(
-    r'^legacy hook\n'
-    r'\[master [a-f0-9]{7}\] Commit!\n' +
+    r'^legacy hook\r?\n'
+    r'\[master [a-f0-9]{7}\] Commit!\r?\n' +
     FILES_CHANGED +
-    r' create mode 100644 baz\n$'
+    r' create mode 100644 baz\r?\n$'
 )
 
 
@@ -257,11 +255,11 @@ def test_install_existing_hook_no_overwrite_idempotent(tmpdir_factory):
 
 
 FAIL_OLD_HOOK = re.compile(
-    r'fail!\n'
-    r'\[INFO\] Installing environment for .+\.\n'
-    r'\[INFO\] Once installed this environment will be reused\.\n'
-    r'\[INFO\] This may take a few minutes\.\.\.\n'
-    r'Bash hook\.+Passed\n'
+    r'fail!\r?\n'
+    r'\[INFO\] Installing environment for .+\.\r?\n'
+    r'\[INFO\] Once installed this environment will be reused\.\r?\n'
+    r'\[INFO\] This may take a few minutes\.\.\.\r?\n'
+    r'Bash hook\.+Passed\r?\n'
 )
 
 
@@ -369,10 +367,10 @@ def test_uninstall_doesnt_remove_not_our_hooks(tmpdir_factory):
 
 
 PRE_INSTALLED = re.compile(
-    r'Bash hook\.+Passed\n'
-    r'\[master [a-f0-9]{7}\] Commit!\n' +
+    r'Bash hook\.+Passed\r?\n'
+    r'\[master [a-f0-9]{7}\] Commit!\r?\n' +
     FILES_CHANGED +
-    r' create mode 100644 foo\n$'
+    r' create mode 100644 foo\r?\n$'
 )
 
 
@@ -400,8 +398,8 @@ def test_installed_from_venv(tmpdir_factory):
         ret, output = _get_commit_output(
             tmpdir_factory,
             env_base={
-                'HOME': os.environ['HOME'],
-                'TERM': os.environ.get('TERM', ''),
+                b'HOME': os.environ['HOME'],
+                b'TERM': os.environ.get('TERM', b''),
             },
         )
         assert ret == 0
@@ -411,7 +409,7 @@ def test_installed_from_venv(tmpdir_factory):
 def _get_push_output(tmpdir_factory):
     # Don't want to write to home directory
     home = tmpdir_factory.get()
-    env = dict(os.environ, **{'PRE_COMMIT_HOME': home})
+    env = dict(os.environ, **{b'PRE_COMMIT_HOME': home})
     return cmd_output(
         'git', 'push', 'origin', 'HEAD:new_branch',
         # git commit puts pre-commit to stderr

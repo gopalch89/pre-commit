@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 
 import contextlib
 
+import virtualenv
+
 from pre_commit.languages import helpers
 from pre_commit.util import clean_path_on_failure
 
@@ -12,7 +14,9 @@ ENVIRONMENT_DIR = 'py_env'
 class PythonEnv(helpers.Environment):
     @property
     def env_prefix(self):
-        return '. {{prefix}}{0}/bin/activate &&'.format(ENVIRONMENT_DIR)
+        return '. {{prefix}}{0}activate &&'.format(
+            virtualenv.path_locations(ENVIRONMENT_DIR)[-1],
+        )
 
 
 @contextlib.contextmanager

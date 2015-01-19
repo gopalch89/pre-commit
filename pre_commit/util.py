@@ -137,6 +137,8 @@ def cmd_output(*cmd, **kwargs):
     if stdin is not None:
         stdin = stdin.encode('UTF-8')
 
+    cmd = [arg.encode('UTF-8') for arg in cmd]
+
     popen_kwargs.update(kwargs)
     proc = __popen(cmd, **popen_kwargs)
     stdout, stderr = proc.communicate(stdin)
@@ -164,3 +166,7 @@ def rmtree(path):
         else:
             raise
     shutil.rmtree(path, ignore_errors=False, onerror=handle_remove_readonly)
+
+
+def get_shell():
+    return 'PowerShell' if os.name == 'nt' else 'bash'

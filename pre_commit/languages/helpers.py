@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from pre_commit.util import get_shell
+
 
 def file_args_to_stdin(file_args):
     return '\0'.join(list(file_args) + [''])
@@ -34,5 +36,5 @@ class Environment(object):
     def run(self, cmd, **kwargs):
         """Returns (returncode, stdout, stderr)."""
         return self.repo_cmd_runner.run(
-            ['bash', '-c', ' '.join([self.env_prefix, cmd])], **kwargs
+            [get_shell(), '-c', ' '.join([self.env_prefix, cmd])], **kwargs
         )
