@@ -15,7 +15,6 @@ def norm_slash(input_tup):
     return tuple(x.replace('/', os.sep) for x in input_tup)
 
 
-
 def test_CalledProcessError_str():
     error = CalledProcessError(
         1, [str('git'), str('status')], 0, (str('stdout'), str('stderr'))
