@@ -104,8 +104,8 @@ def _get_commit_output(
     cmd_output('touch', touch_file)
     cmd_output('git', 'add', touch_file)
     # Don't want to write to home directory
-    home = home or tmpdir_factory.get()
-    env = dict(env_base, **{b'PRE_COMMIT_HOME': home})
+    home = home or tmpdir_factory.get().encode('UTF-8')
+    env = dict(env_base, **{str('PRE_COMMIT_HOME'): home})
     return cmd_output(
         'git', 'commit', '-m', 'Commit!', '--allow-empty',
         # git commit puts pre-commit to stderr
@@ -382,7 +382,7 @@ def test_installs_hooks_with_hooks_True(
     with cwd(path):
         install(Runner(path), hooks=True)
         ret, output = _get_commit_output(
-            tmpdir_factory, home=mock_out_store_directory,
+            tmpdir_factory, home=mock_out_store_directory.encode('UTF-8'),
         )
 
         assert ret == 0
@@ -408,8 +408,8 @@ def test_installed_from_venv(tmpdir_factory):
 
 def _get_push_output(tmpdir_factory):
     # Don't want to write to home directory
-    home = tmpdir_factory.get()
-    env = dict(os.environ, **{b'PRE_COMMIT_HOME': home})
+    home = tmpdir_factory.get().encode('UTF-8')
+    env = dict(os.environ, **{str('PRE_COMMIT_HOME'): home})
     return cmd_output(
         'git', 'push', 'origin', 'HEAD:new_branch',
         # git commit puts pre-commit to stderr

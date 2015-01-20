@@ -285,7 +285,10 @@ def test_stdout_write_bug_py26(
         install(Runner(repo_with_failing_hook))
 
         # Don't want to write to home directory
-        env = dict(os.environ, **{b'PRE_COMMIT_HOME': tmpdir_factory.get()})
+        env = dict(
+            os.environ,
+            **{str('PRE_COMMIT_HOME'): tmpdir_factory.get().encode('UTF-8')}
+        )
         # Have to use subprocess because pytest monkeypatches sys.stdout
         _, stdout, _ = cmd_output(
             'git', 'commit', '-m', 'Commit!',

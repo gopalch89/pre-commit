@@ -28,7 +28,7 @@ def tmpdir_factory(tmpdir):
             path = os.path.join(tmpdir.strpath, five.text(self.tmpdir_count))
             self.tmpdir_count += 1
             os.mkdir(path)
-            return path.encode('UTF-8')
+            return path
 
     yield TmpdirFactory()
 
